@@ -141,11 +141,16 @@ function ding_debt_debts_form_submit($form, &$form_state) {
     }
   }
 
+  // dpm($debts);
+
   if ($amount > 0) {
-    $params = array('params' => array('debt_ids' => array_keys($debts)));
+    //pjo pass whole object, not only keys
+    // $params = array('params' => array('debt_ids' => array_keys($debts)));
+    $params = array('params'=>array( 'debts' => $debts) );
 
     $url = ding_provider_invoke('payment', 'get_url', $amount, $params, 'ding_debt_payment_callback');
 
+    //dpm($url);
     if ($url) {
       $form_state['redirect'] = $url;
     }
