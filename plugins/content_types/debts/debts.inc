@@ -87,7 +87,7 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
       $build = ding_provider_get_form('ding_debt_debts_form', $debts);
     }
 
-    $block->content = render($table) . render($build);
+    $block->content = /*render($table) .*/ render($build);
 
   }
   else {
@@ -103,52 +103,5 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
  */
 function ding_debt_debts_content_type_edit_form($form, &$form_state) {
   return $form;
-}
-
-/**
- * Implements a drupal form, which implements a pay button and debts data
- */
-function ding_debt_debts_form($form, &$form_state, $debts = array()) {
-
-  $form['debt_data'] = array(
-    '#type' => 'value',
-    '#value' => $debts,
-  );
-
-  $form['pay'] = array(
-    '#type' => 'submit',
-    '#prefix' => '<div class="pay-button">',
-    '#value' => t('Pay debts'),
-    '#suffix' => '</div>',
-  );
-
-  return $form;
-}
-
-/**
- * Submit handler for the form.
- */
-function ding_debt_debts_form_submit($form, &$form_state) {
-  global $user;
-  $amount = 0;
-  $debts = array_filter($form_state['values']['debt_data']);
-  foreach ($debts as $debt_id => $debt_data) {
-    if ( !$form_state['values']['debt_data'][$debt_id]->invoice_number ) {
-      $amount += $form_state['values']['debt_data'][$debt_id]->amount;
-      $amount -= $form_state['values']['debt_data'][$debt_id]->amount_paid;
-    } else {
-      unset($debts[$debt_id]);
-    }
-  }
-
-  if ($amount > 0) {
-    $params = array('params' => array('debt_ids' => array_keys($debts)));
-
-    $url = ding_provider_invoke('payment', 'get_url', $amount, $params, 'ding_debt_payment_callback');
-
-    if ($url) {
-      $form_state['redirect'] = $url;
-    }
-  }
 }
 

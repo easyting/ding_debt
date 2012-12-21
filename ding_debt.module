@@ -38,3 +38,171 @@ function ding_debt_payment_callback($transaction) {
   return ding_provider_invoke_page('debt', 'payment_received', $transaction['payment_price'], $transaction['params']['debt_ids'], $transaction['payment_order_id']);
 }
 
+/**
+ * Implements a drupal form, which implements a pay button and debts data
+ */
+function ding_debt_debts_form($form, &$form_state, $debts = array()) {
+
+  $header = array (
+    'date' => t('Date'),
+    'did' => t('Id'),
+    'title' => t('Title'),
+    'type' => t('Type'),
+    'amount' => t('Amount'),
+  );
+  $options = array();
+  $invoises = array();
+  $default = array();
+  $total_amount = 0;
+  foreach($debts as $id => $debt) {
+    if (!$debt->invoice_number) {
+      list($did, $title) = explode('  ', $debt->note);
+      $total_amount += $debt->amount;
+      $total_amount -= $debt->amount_paid;
+      $options[$id] = array(
+        'did' => $id,
+        'title' => $title,
+        'type' => ding_debt_get_debt_type_name($debt->type),
+        'date' => $debt->date,
+        'amount' => $debt->amount,
+      );
+      $default[$id] = $id;
+    }
+    else {
+      $invoises[$id] = array(
+        'date' => $debt->date,
+        'did' => $id,
+        'title' => t('Incasso'),
+        'type' => ding_debt_get_debt_type_name($debt->type),
+        'amount' => $debt->amount,
+      );
+    }
+    
+  }
+  $form['select_table'] = array (
+    '#type' => 'tableselect',
+    '#header' => $header,
+    '#options' => $options,
+    '#default_value' => $default,
+    '#empty' => t('No debts found'),
+  );
+  if($invoises) {
+    $form['invoice_table'] = array (
+      '#type' => 'item',
+      '#theme' => 'table',
+      '#header' => $header,
+      '#rows' => $invoises,
+      '#empty' => t('No debts found'),
+      '#description' => t("* Invoiced fees can't be paid online."),
+    );
+  }
+  // -----------------------
+  $form['debt_data'] = array(
+    '#type' => 'value',
+    '#value' => $debts,
+  );
+
+  $form['pay'] = array(
+    '#type' => 'submit',
+    '#prefix' => '<div class="pay-button">',
+    '#value' => t('Pay debts'),
+    '#suffix' => '</div>',
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for the form.
+ */
+function ding_debt_debts_form_submit($form, &$form_state) {
+  $amount = 0;
+  $debts = array_filter($form_state['input']['select_table']);
+  foreach ($debts as $debt_id => $debt_data) {
+    if(isset($form_state['input']['select_table'][$debt_id])) {
+      if ( !$form_state['values']['debt_data'][$debt_id]->invoice_number ) {
+        $amount += $form_state['values']['debt_data'][$debt_id]->amount;
+        $amount -= $form_state['values']['debt_data'][$debt_id]->amount_paid;
+      }
+      else {
+        unset($debts[$debt_id]);
+      }
+    }
+  }
+  if ($amount > 0) {
+    $params = array('params' => array('debt_ids' => array_keys($debts)));
+    
+    $url = ding_provider_invoke('payment', 'get_url', $amount, $params, 'ding_debt_payment_callback');
+    
+    if ($url) {
+      $form_state['redirect'] = $url;
+    }
+  }
+}
+
+/**
+ * Convert debt type into a human readable tekst
+ */
+function ding_debt_get_debt_type_name($type) {
+  switch($type) {
+    case 'deleteReservationFeeDebt':
+      return t('Detele reservation fee');
+      break;
+    case 'emailReminderFeeDebt':
+      return t('Email reminder fee');
+      break;
+    case 'illFeeDebt':
+      return t('Ill fee');
+      break;
+    case 'illReservationFeeDebt':
+      return t('Ill reservation fee');
+      break;
+    case 'loanFeeDebt':
+      return t('Loan fee');
+      break;
+    case 'messageFeeDebt':
+      return t('Message fee');
+      break;
+    case 'overdueFeeDebt':
+      return t('Overdue fee');
+      break;
+    case 'overdueFeeInvoiceDebt':
+      return t('Overdue fee invoice');
+      break;
+    case 'photocopyFeeDebt':
+      return t('Photocopy fee');
+      break;
+    case 'renewFeeDebt':
+      return t('Renew fee');
+      break;
+    case 'replacementFeeDebt':
+      return t('Replacement fee');
+      break;
+    case 'reservationFeeDebt':
+      return t('Reservation fee');
+      break;
+    case 'reservationPickupFeeDebt':
+      return t('Reservation pickup fee');
+      break;
+    case 'smsIllFeeDebt':
+      return t('SMS Ill fee');
+      break;
+    case 'smsRecall1FeeDebt':
+    case 'smsRecall2FeeDebt':
+    case 'smsRecall3FeeDebt':
+    case 'smsRecall4FeeDebt':
+    case 'smsRecall5FeeDebt':
+      return t('SMS recall fee');
+      break;
+    case 'smsReminderFeeDebt':
+      return t('SMS Reminder fee');
+      break;
+    case 'smsReservationFeeDebt':
+      return t('SMS reservation fee');
+      break;
+    case 'otherFeeDebt':
+    default:
+      return t('Other fee');
+       break;
+  }
+}
