@@ -53,7 +53,7 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
         $has_invoiced_fees = TRUE;
       }
       $row = array(
-        array('data' => format_date(strtotime(check_plain($debt->date)), 'date_only'), 'class' => 'feedate'),
+        array('data' => format_date(strtotime(check_plain($debt->date)), 'custom', 'd/m/Y'), 'class' => 'feedate'),
         array('data' => $debt->display_name, 'class' => 'feetitle'),
         array('data' => ( $is_invoice ) ? number_format(($debt->amount - $debt->amount_paid), 2, ',', ' ') . ' <span class="note">*</span>' : number_format(($debt->amount - $debt->amount_paid), 2, ',', ' '), 'class' => 'feeamount'),
       );
