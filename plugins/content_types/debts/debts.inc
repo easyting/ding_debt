@@ -87,7 +87,7 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
       $build = ding_provider_get_form('ding_debt_debts_form', $debts);
     }
 
-    $block->content = render($table) . render($build);
+    $block->content = /*render($table) .*/ render($build);
 
   }
   else {
