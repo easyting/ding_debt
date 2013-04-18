@@ -53,7 +53,8 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
         );
         $rows_penalty[] = $row;      
         
-      } else {
+      } 
+      else {
         $compensation_amount += $debt->amount;
         $compensation_amount -= $debt->amount_paid;
         $row = array(
