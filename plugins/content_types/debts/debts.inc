@@ -78,7 +78,7 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
       array('data' => number_format($compensation_amount, 2, ',', ' '), 'class' => 'feeamount', 'header' => TRUE),
     );
 
-    if ( $compensation_amount > 0 ) {
+    if ($compensation_amount > 0) {
       // add note
       $row = array(
         array('data' => '', 'class' => 'fee-invoice-note'),
@@ -99,12 +99,11 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
     ));
     
     // Criterion: only display "Pay" button on if there is penalty related with penalties.
-    if ( $penalties_amount > 0 ) {
+    if ($penalties_amount > 0) {
       $build = ding_provider_get_form('ding_debt_debts_form', $debts);
     }
 
-    $block->content = render($table_penalties) . render($build) . 
-      render($table_compensation);
+    $block->content = render($table_penalties) . render($build) . render($table_compensation);
 
   }
   else {
