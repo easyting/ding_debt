@@ -22,20 +22,19 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
   $preload_ids = array();
   $items = array();
   $debt_list = array();
-  $rows = array();
+  $rows_penalty = array();
+  $rows_compensation = array();
   $row = array();
-  $total_amount = 0;
-  $has_invoiced_fees = FALSE;
-
+  $penalties_amount = 0;
+  $compensation_amount = 0;
+  
   $block = new stdClass();
   $block->module = 'ding_debt';
   $block->delta  = 'debts';
   $block->title = t('My debts');
 
   $debts = ding_provider_invoke_page('debt', 'list', $account);
-
   if (count($debts) == TRUE) {
-
     $header = array(
       array('data' => t('Fee date'), 'class' => 'feedate'),
       array('data' => t('Material name'), 'class' => 'feetitle'),
@@ -43,51 +42,68 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
     );
 
     foreach ($debts as $debt) {
-      // invoiced fees can't be paid online.
-      $is_invoice = TRUE;
+      
       if ( !$debt->invoice_number ) {
-        $total_amount += $debt->amount;
-        $total_amount -= $debt->amount_paid;
-        $is_invoice = FALSE;
-      } else {
-        $has_invoiced_fees = TRUE;
+        $penalties_amount += $debt->amount;
+        $penalties_amount -= $debt->amount_paid;
+        $row = array(
+          array('data' => format_date(strtotime(check_plain($debt->date)), 'custom', 'd/m/Y'), 'class' => 'feedate'),
+          array('data' => $debt->display_name, 'class' => 'feetitle'),
+          array('data' => number_format(($debt->amount - $debt->amount_paid), 2, ',', ' '), 'class' => 'feeamount'),
+        );
+        $rows_penalty[] = $row;      
+        
+      } 
+      else {
+        $compensation_amount += $debt->amount;
+        $compensation_amount -= $debt->amount_paid;
+        $row = array(
+          array('data' => format_date(strtotime(check_plain($debt->date)), 'custom', 'd/m/Y'), 'class' => 'feedate'),
+          array('data' => $debt->display_name, 'class' => 'feetitle'),
+          array('data' => number_format(($debt->amount - $debt->amount_paid), 2, ',', ' ') . ' <span class="note">*</span>' , 'class' => 'feeamount'),
+        );
+        $rows_compensation[] = $row;      
       }
-      $row = array(
-        array('data' => format_date(strtotime(check_plain($debt->date)), 'custom', 'd/m/Y'), 'class' => 'feedate'),
-        array('data' => $debt->display_name, 'class' => 'feetitle'),
-        array('data' => ( $is_invoice ) ? number_format(($debt->amount - $debt->amount_paid), 2, ',', ' ') . ' <span class="note">*</span>' : number_format(($debt->amount - $debt->amount_paid), 2, ',', ' '), 'class' => 'feeamount'),
-      );
-      $rows[] = $row;
     }
-
-    // add total
-    $row = array(
+    // Add total for penalties.
+    $rows_penalty[] = array(
       array('data' => t('Total'), 'class' => 'feedate', 'header' => TRUE),
       array('data' => '', 'class' => 'feetitle', 'header' => TRUE),
-      array('data' => number_format($total_amount, 2, ',', ' '), 'class' => 'feeamount', 'header' => TRUE),
+      array('data' => number_format($penalties_amount, 2, ',', ' '), 'class' => 'feeamount', 'header' => TRUE),
     );
-    $rows[] = $row;
+    // Add total for compensation.
+    $rows_compensation[] = array(
+      array('data' => t('Total'), 'class' => 'feedate', 'header' => TRUE),
+      array('data' => '', 'class' => 'feetitle', 'header' => TRUE),
+      array('data' => number_format($compensation_amount, 2, ',', ' '), 'class' => 'feeamount', 'header' => TRUE),
+    );
 
-    if ( $has_invoiced_fees ) {
+    if ($compensation_amount > 0) {
       // add note
       $row = array(
         array('data' => '', 'class' => 'fee-invoice-note'),
-        array('data' => t("* Invoiced fees can't be paid online."), 'class' => 'fee-invoice-note'),
+        array('data' => t("* Invoiced fees can only be paid on your local library."), 'class' => 'fee-invoice-note'),
         array('data' => '', 'class' => 'fee-invoice-note'),
       );
-      $rows[] = $row;
+      $rows_compensation[] = $row;
     }
-
-    $table = theme('table', array(
+    
+    $table_penalties = theme('table', array(
       'header' => $header,
-      'rows' => $rows,
+      'rows' => $rows_penalty,
     ));
-
-    if ( $total_amount ) {
+    
+    $table_compensation = theme('table', array(
+      'header' => $header,
+      'rows' => $rows_compensation,
+    ));
+    
+    // Criterion: only display "Pay" button on if there is penalty related with penalties.
+    if ($penalties_amount > 0) {
       $build = ding_provider_get_form('ding_debt_debts_form', $debts);
     }
 
-    $block->content = render($table) . render($build);
+    $block->content = render($table_penalties) . render($build) . render($table_compensation);
 
   }
   else {
