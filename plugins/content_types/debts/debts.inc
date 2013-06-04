@@ -19,7 +19,7 @@ $plugin = array(
 function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $context) {
   // Adding the js to fix the duplicate ids issue. 
   // The weight is assigned to 5 in order to run the script after tableheader.js installs the sticky tables.
-  drupal_add_js(drupal_get_path('module', 'ding_debt') . '/js/tableheader_duplicate_id_fix.js', array('weight' => 5));
+  drupal_add_js(drupal_get_path('module', 'ding_debt') . '/js/ding_debt.js', array('weight' => 5));
   $preload_debts = &drupal_static('ids');
   $account = isset($context->data) ? $context->data : NULL;
   $preload_ids = array();
