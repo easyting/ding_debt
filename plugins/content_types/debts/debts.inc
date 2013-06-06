@@ -17,6 +17,9 @@ $plugin = array(
  * Render the block
  */
 function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $context) {
+  // Adding the js to fix the duplicate ids issue. 
+  // The weight is assigned to 5 in order to run the script after tableheader.js installs the sticky tables.
+  drupal_add_js(drupal_get_path('module', 'ding_debt') . '/js/ding_debt.js', array('weight' => 5));
   $preload_debts = &drupal_static('ids');
   $account = isset($context->data) ? $context->data : NULL;
   $preload_ids = array();
@@ -35,10 +38,16 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
 
   $debts = ding_provider_invoke_page('debt', 'list', $account);
   if (count($debts) == TRUE) {
-    $header = array(
-      array('data' => t('Fee date'), 'class' => 'feedate'),
-      array('data' => t('Material name'), 'class' => 'feetitle'),
-      array('data' => t('Amount'), 'class' => 'feeamount'),
+    $header_penalties = array(
+      array('data' => t('Fee date'), 'id' => 'feedate-penalties', 'class' => 'feedate'),
+      array('data' => t('Material name'), 'id' => 'material-penalties', 'class' => 'feetitle'),
+      array('data' => t('Amount'), 'id' => 'amount-penalties', 'class' => 'feeamount'),
+    );
+
+    $header_compensation = array(
+      array('data' => t('Fee date'), 'id' => 'feedate-compensation' , 'class' => 'feedate'),
+      array('data' => t('Material name'), 'id' => 'material-compensation' , 'class' => 'feetitle'),
+      array('data' => t('Amount'), 'id' => 'amount-compensation', 'class' => 'feeamount'),
     );
 
     foreach ($debts as $debt) {
@@ -67,34 +76,34 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
     }
     // Add total for penalties.
     $rows_penalty[] = array(
-      array('data' => t('Total'), 'class' => 'feedate', 'header' => TRUE),
-      array('data' => '', 'class' => 'feetitle', 'header' => TRUE),
-      array('data' => number_format($penalties_amount, 2, ',', ' '), 'class' => 'feeamount', 'header' => TRUE),
+      array('data' => t('Total'), 'class' => 'feedate', 'headers' => 'feedate-penalties'),
+      array('data' => '', 'class' => 'feetitle', 'headers' => 'material-penalties'),
+      array('data' => number_format($penalties_amount, 2, ',', ' '), 'class' => 'feeamount', 'headers' => 'amount-penalties'),
     );
     // Add total for compensation.
     $rows_compensation[] = array(
-      array('data' => t('Total'), 'class' => 'feedate', 'header' => TRUE),
-      array('data' => '', 'class' => 'feetitle', 'header' => TRUE),
-      array('data' => number_format($compensation_amount, 2, ',', ' '), 'class' => 'feeamount', 'header' => TRUE),
+      array('data' => t('Total'), 'class' => 'feedate', 'headers' => 'feedate-compensation'),
+      array('data' => '', 'class' => 'feetitle', 'headers' => 'material-compensation'),
+      array('data' => number_format($compensation_amount, 2, ',', ' '), 'class' => 'feeamount', 'headers' => 'amount-compensation'),
     );
 
     if ($compensation_amount > 0) {
       // add note
       $row = array(
-        array('data' => '', 'class' => 'fee-invoice-note'),
-        array('data' => t("* Invoiced fees can only be paid on your local library."), 'class' => 'fee-invoice-note'),
-        array('data' => '', 'class' => 'fee-invoice-note'),
+        array('data' => '', 'class' => 'fee-invoice-note', 'headers' => 'feedate-compensation'),
+        array('data' => t("* Invoiced fees can only be paid on your local library."), 'class' => 'fee-invoice-note', 'headers' => 'material-compensation'),
+        array('data' => '', 'class' => 'fee-invoice-note', 'headers' => 'amount-compensation'),
       );
       $rows_compensation[] = $row;
     }
     
     $table_penalties = theme('table', array(
-      'header' => $header,
+      'header' => $header_penalties,
       'rows' => $rows_penalty,
     ));
     
     $table_compensation = theme('table', array(
-      'header' => $header,
+      'header' => $header_compensation,
       'rows' => $rows_compensation,
     ));
     
