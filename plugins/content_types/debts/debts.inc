@@ -17,9 +17,8 @@ $plugin = array(
  * Render the block
  */
 function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $context) {
-  // Adding the js to fix the duplicate ids issue. 
+  // Adding the js to fix the duplicate ids issue.
   // The weight is assigned to 5 in order to run the script after tableheader.js installs the sticky tables.
-  drupal_add_js(drupal_get_path('module', 'ding_debt') . '/js/ding_debt.js', array('weight' => 5));
   $preload_debts = &drupal_static('ids');
   $account = isset($context->data) ? $context->data : NULL;
   $preload_ids = array();
@@ -30,7 +29,7 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
   $row = array();
   $penalties_amount = 0;
   $compensation_amount = 0;
-  
+
   $block = new stdClass();
   $block->module = 'ding_debt';
   $block->delta  = 'debts';
@@ -51,27 +50,27 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
     );
 
     foreach ($debts as $debt) {
-      
+
       if ( !$debt->invoice_number ) {
         $penalties_amount += $debt->amount;
         $penalties_amount -= $debt->amount_paid;
         $row = array(
-          array('data' => format_date(strtotime(check_plain($debt->date)), 'custom', 'd/m/Y'), 'class' => 'feedate'),
-          array('data' => $debt->display_name, 'class' => 'feetitle'),
-          array('data' => number_format(($debt->amount - $debt->amount_paid), 2, ',', ' '), 'class' => 'feeamount'),
+          array('data' => format_date(strtotime(check_plain($debt->date)), 'custom', 'd/m/Y'), 'class' => 'feedate', 'headers' => 'feedate-penalties'),
+          array('data' => $debt->display_name, 'class' => 'feetitle', 'headers' => 'material-penalties'),
+          array('data' => number_format(($debt->amount - $debt->amount_paid), 2, ',', ' '), 'class' => 'feeamount', 'headers' => 'amount-penalties'),
         );
-        $rows_penalty[] = $row;      
-        
-      } 
+        $rows_penalty[] = $row;
+
+      }
       else {
         $compensation_amount += $debt->amount;
         $compensation_amount -= $debt->amount_paid;
         $row = array(
-          array('data' => format_date(strtotime(check_plain($debt->date)), 'custom', 'd/m/Y'), 'class' => 'feedate'),
-          array('data' => $debt->display_name, 'class' => 'feetitle'),
-          array('data' => number_format(($debt->amount - $debt->amount_paid), 2, ',', ' ') . ' <span class="note">*</span>' , 'class' => 'feeamount'),
+          array('data' => format_date(strtotime(check_plain($debt->date)), 'custom', 'd/m/Y'), 'class' => 'feedate', 'headers' => 'feedate-compensation'),
+          array('data' => $debt->display_name, 'class' => 'feetitle', 'headers' => 'material-compensation'),
+          array('data' => number_format(($debt->amount - $debt->amount_paid), 2, ',', ' ') . ' <span class="note">*</span>' , 'class' => 'feeamount', 'headers' => 'amount-compensation'),
         );
-        $rows_compensation[] = $row;      
+        $rows_compensation[] = $row;
       }
     }
     // Add total for penalties.
@@ -96,17 +95,17 @@ function ding_debt_debts_content_type_render($subtype, $conf, $panel_args, $cont
       );
       $rows_compensation[] = $row;
     }
-    
+
     $table_penalties = theme('table', array(
       'header' => $header_penalties,
       'rows' => $rows_penalty,
     ));
-    
+
     $table_compensation = theme('table', array(
       'header' => $header_compensation,
       'rows' => $rows_compensation,
     ));
-    
+
     // Criterion: only display "Pay" button on if there is penalty related with penalties.
     if ($penalties_amount > 0) {
       $build = ding_provider_get_form('ding_debt_debts_form', $debts);
