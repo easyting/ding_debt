@@ -1,4 +1,4 @@
- (function($) {
+(function($) {
   Drupal.behaviors.dingDebtTableHeaderFix = {
     attach: function(context, settings) {
       // Changing the ids of the header elements, of the sticky-header tables, in the debt_page to avoid duplicates.
