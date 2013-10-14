@@ -39,11 +39,11 @@ function ding_debt_payment_callback($transaction) {
 }
 
 /**
- * Implements a drupal form, which implements a pay button and debts data
+ * Implements a drupal form, which implements a pay button and debts data.
  */
 function ding_debt_debts_form($form, &$form_state, $debts = array()) {
 
-  $header = array (
+  $header = array(
     'date' => t('Date'),
     'did' => t('Id'),
     'title' => t('Title'),
@@ -54,9 +54,12 @@ function ding_debt_debts_form($form, &$form_state, $debts = array()) {
   $invoises = array();
   $default = array();
   $total_amount = 0;
-  foreach($debts as $id => $debt) {
+  foreach ($debts as $id => $debt) {
     if (!$debt->invoice_number) {
-      list($did, $title) = explode('  ', $debt->note);
+      $note = explode('  ', $debt->note);
+      $did = $note[0];
+      // @todo Need default value for item.
+      $title = !empty($note[1]) ? $note[1] : NULL;
       $total_amount += $debt->amount;
       $total_amount -= $debt->amount_paid;
       $options[$id] = array(
@@ -79,15 +82,15 @@ function ding_debt_debts_form($form, &$form_state, $debts = array()) {
     }
 
   }
-  $form['select_table'] = array (
+  $form['select_table'] = array(
     '#type' => 'tableselect',
     '#header' => $header,
     '#options' => $options,
     '#default_value' => $default,
     '#empty' => t('No debts found'),
   );
-  if($invoises) {
-    $form['invoice_table'] = array (
+  if ($invoises) {
+    $form['invoice_table'] = array(
       '#type' => 'item',
       '#theme' => 'table',
       '#header' => $header,
@@ -119,8 +122,8 @@ function ding_debt_debts_form_submit($form, &$form_state) {
   $amount = 0;
   $debts = array_filter($form_state['input']['select_table']);
   foreach ($debts as $debt_id => $debt_data) {
-    if(isset($form_state['input']['select_table'][$debt_id])) {
-      if ( !$form_state['values']['debt_data'][$debt_id]->invoice_number ) {
+    if (isset($form_state['input']['select_table'][$debt_id])) {
+      if (!$form_state['values']['debt_data'][$debt_id]->invoice_number) {
         $amount += $form_state['values']['debt_data'][$debt_id]->amount;
         $amount -= $form_state['values']['debt_data'][$debt_id]->amount_paid;
       }
@@ -141,68 +144,86 @@ function ding_debt_debts_form_submit($form, &$form_state) {
 }
 
 /**
- * Convert debt type into a human readable tekst
+ * Convert debt type into a human readable text.
  */
 function ding_debt_get_debt_type_name($type) {
-  switch($type) {
+  $result = NULL;
+  switch ($type) {
     case 'deleteReservationFeeDebt':
-      return t('Detele reservation fee');
+      $result = t('Detele reservation fee');
       break;
+
     case 'emailReminderFeeDebt':
-      return t('Email reminder fee');
+      $result = t('Email reminder fee');
       break;
+
     case 'illFeeDebt':
-      return t('Ill fee');
+      $result = t('Ill fee');
       break;
+
     case 'illReservationFeeDebt':
-      return t('Ill reservation fee');
+      $result = t('Ill reservation fee');
       break;
+
     case 'loanFeeDebt':
-      return t('Loan fee');
+      $result = t('Loan fee');
       break;
+
     case 'messageFeeDebt':
-      return t('Message fee');
+      $result = t('Message fee');
       break;
+
     case 'overdueFeeDebt':
-      return t('Overdue fee');
+      $result = t('Overdue fee');
       break;
+
     case 'overdueFeeInvoiceDebt':
-      return t('Overdue fee invoice');
+      $result = t('Overdue fee invoice');
       break;
+
     case 'photocopyFeeDebt':
-      return t('Photocopy fee');
+      $result = t('Photocopy fee');
       break;
+
     case 'renewFeeDebt':
-      return t('Renew fee');
+      $result = t('Renew fee');
       break;
+
     case 'replacementFeeDebt':
-      return t('Replacement fee');
+      $result = t('Replacement fee');
       break;
+
     case 'reservationFeeDebt':
-      return t('Reservation fee');
+      $result = t('Reservation fee');
       break;
+
     case 'reservationPickupFeeDebt':
-      return t('Reservation pickup fee');
+      $result = t('Reservation pickup fee');
       break;
+
     case 'smsIllFeeDebt':
-      return t('SMS Ill fee');
+      $result = t('SMS Ill fee');
       break;
+
     case 'smsRecall1FeeDebt':
     case 'smsRecall2FeeDebt':
     case 'smsRecall3FeeDebt':
     case 'smsRecall4FeeDebt':
     case 'smsRecall5FeeDebt':
-      return t('SMS recall fee');
+      $result = t('SMS recall fee');
       break;
+
     case 'smsReminderFeeDebt':
-      return t('SMS Reminder fee');
+      $result = t('SMS Reminder fee');
       break;
+
     case 'smsReservationFeeDebt':
-      return t('SMS reservation fee');
+      $result = t('SMS reservation fee');
       break;
+
     case 'otherFeeDebt':
     default:
-      return t('Other fee');
-       break;
+      $result = t('Other fee');
   }
+  return $result;
 }
