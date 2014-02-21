@@ -35,7 +35,15 @@ function ding_debt_ding_provider_user() {
  * Callback for successful payment transaction.
  */
 function ding_debt_payment_callback($transaction) {
-  return ding_provider_invoke_page('debt', 'payment_received', $transaction['payment_price'], $transaction['params'], $transaction['payment_order_id']);
+  $result = ding_provider_invoke_page(
+    'debt',
+    'payment_received',
+    $transaction['payment_price'],
+    $transaction['params'],
+    $transaction['payment_order_id']
+  );
+  module_invoke_all('ding_debt_payment_received');
+  return $result;
 }
 
 /**
