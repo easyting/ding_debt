@@ -35,14 +35,21 @@ function ding_debt_ding_provider_user() {
  * Callback for successful payment transaction.
  */
 function ding_debt_payment_callback($transaction) {
-  return ding_provider_invoke_page('debt', 'payment_received', $transaction['payment_price'], $transaction['params'], $transaction['payment_order_id']);
+  $result = ding_provider_invoke_page(
+    'debt',
+    'payment_received',
+    $transaction['payment_price'],
+    $transaction['params'],
+    $transaction['payment_order_id']
+  );
+  module_invoke_all('ding_debt_payment_received');
+  return $result;
 }
 
 /**
  * Implements a drupal form, which implements a pay button and debts data.
  */
 function ding_debt_debts_form($form, &$form_state, $debts = array()) {
-
   $header = array(
     'date' => t('Date'),
     'did' => t('Id'),
@@ -51,13 +58,13 @@ function ding_debt_debts_form($form, &$form_state, $debts = array()) {
     'amount' => t('Amount'),
   );
   $options = array();
-  $invoises = array();
+  $invoices = array();
   $default = array();
   $total_amount = 0;
+
   foreach ($debts as $id => $debt) {
     if (!$debt->invoice_number) {
       $note = explode('  ', $debt->note);
-      $did = $note[0];
       // @todo Need default value for item.
       $title = !empty($note[1]) ? $note[1] : NULL;
       $total_amount += $debt->amount;
@@ -72,7 +79,7 @@ function ding_debt_debts_form($form, &$form_state, $debts = array()) {
       $default[$id] = $id;
     }
     else {
-      $invoises[$id] = array(
+      $invoices[$id] = array(
         'date' => $debt->date,
         'did' => $id,
         'title' => t('Incasso'),
@@ -80,8 +87,8 @@ function ding_debt_debts_form($form, &$form_state, $debts = array()) {
         'amount' => $debt->amount,
       );
     }
-
   }
+
   $form['select_table'] = array(
     '#type' => 'tableselect',
     '#header' => $header,
@@ -89,17 +96,18 @@ function ding_debt_debts_form($form, &$form_state, $debts = array()) {
     '#default_value' => $default,
     '#empty' => t('No debts found'),
   );
-  if ($invoises) {
+
+  if ($invoices) {
     $form['invoice_table'] = array(
       '#type' => 'item',
       '#theme' => 'table',
       '#header' => $header,
-      '#rows' => $invoises,
+      '#rows' => $invoices,
       '#empty' => t('No debts found'),
       '#description' => t("* Invoiced fees can't be paid online."),
     );
   }
-  // -----------------------
+
   $form['debt_data'] = array(
     '#type' => 'value',
     '#value' => $debts,
