@@ -52,7 +52,6 @@ function ding_debt_payment_callback($transaction) {
 function ding_debt_debts_form($form, &$form_state, $debts = array()) {
   $header = array(
     'date' => t('Date'),
-    'did' => t('Id'),
     'title' => t('Title'),
     'type' => t('Type'),
     'amount' => t('Amount'),
@@ -70,21 +69,19 @@ function ding_debt_debts_form($form, &$form_state, $debts = array()) {
       $total_amount += $debt->amount;
       $total_amount -= $debt->amount_paid;
       $options[$id] = array(
-        'did' => $id,
+        'date' => date("d/m-Y", strtotime($debt->date)),
         'title' => $title,
         'type' => ding_debt_get_debt_type_name($debt->type),
-        'date' => $debt->date,
-        'amount' => $debt->amount,
+        'amount' => number_format($debt->amount, 2, ",", ".") . ' kr.',
       );
       $default[$id] = $id;
     }
     else {
       $invoices[$id] = array(
-        'date' => $debt->date,
-        'did' => $id,
-        'title' => t('Incasso'),
-        'type' => ding_debt_get_debt_type_name($debt->type),
-        'amount' => $debt->amount,
+        'date' => date("d/m-Y", strtotime($debt->date)),
+        'title' => $debt->display_name,
+        'type' => ding_debt_get_debt_type_name($debt->type) . ' (' . t('Incasso') . ')',
+        'amount' => number_format($debt->amount, 2, ",", ".") . ' kr.',
       );
     }
   }
